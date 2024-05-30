@@ -666,6 +666,39 @@ graph_prep_binary <- function (OR_outcomes) {
 #ordinal(employment_wdata_factor$Q14..grid., employment_wdata_factor$UK_Academic, employment_wdata_factor )
 #nominal(employment_wdata_factor$Q12..single., employment_wdata_factor$UK_Academic, employment_wdata_factor)
 
+# run ll demographoc analyses for a questions
+analyze_demographics <- function(data, demographics, response_column, unique_id = "UniqueResponseNumber") {
+  results <- list()
+  
+  for(demo in demographics) {
+    cat("Analyzing for demographic:", demo, "\n")
+    
+    # Ensure the demographic variable and response columns are factors
+    data[[demo]] <- factor(data[[demo]])
+    data[[response_column]] <- as.character(data[[response_column]])
+    
+    # Data preprocessing and cleaning
+    temp_data <- multidatClean(response_column, demo, unique_id, data)
+    
+    # Creating contingency table
+    con_table <- xtabs(~ get(response_column) + get(demo), data = temp_data)
+    print(con_table)
+    
+    # Secondary cleaning, if specific to your processing needs
+    cleaned_data <- ordinaldatClean(temp_data[[response_column]], temp_data)
+    
+    # Performing ordinal logistic regression
+    model_result <- ordinal(cleaned_data$CatOutcome, cleaned_data[[demo]], cleaned_data)
+    
+    # Collecting results in a list to return
+    results[[demo]] <- list(
+      contingency_table = con_table,
+      model = model_result
+    )
+  }
+  
+  return(results)
+}
 
 
 
